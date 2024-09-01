@@ -8,16 +8,16 @@ export default class JohnnyDepp {
     any
   >();
 
-  static register<T>(constructor: Constructor<T>, params?: Constructor<any>[]) {
+  static register<T>(constructor: Constructor<T>) {
     if (this.serviceMap.has(constructor)) {
       return this.serviceMap.get(constructor);
     }
 
+    const params = Reflect.getMetadata("design:paramtypes", constructor);
+
     const instance = new constructor(...this.resolveDependentServices(params));
 
-    this.serviceMap.set(constructor, instance);
-
-    return instance;
+    return this.serviceMap.set(constructor, instance).get(constructor);
   }
 
   private static resolveDependentServices(
@@ -29,9 +29,7 @@ export default class JohnnyDepp {
 
     const resolvedParams: unknown[] = requiredServices.map(
       (p: Constructor<unknown>) => {
-        const params = Reflect.getMetadata("design:paramtypes", p);
-
-        return this.register(p, params);
+        return this.register(p);
       },
     );
 
@@ -44,7 +42,5 @@ export default class JohnnyDepp {
 }
 
 export function Service<T>(target: Constructor<T>) {
-  const params = Reflect.getMetadata("design:paramtypes", target);
-
-  JohnnyDepp.register(target, params);
+  JohnnyDepp.register(target);
 }
